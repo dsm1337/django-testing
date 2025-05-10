@@ -1,10 +1,10 @@
-import pytest
 from datetime import timedelta
 
 from django.conf import settings
 from django.test.client import Client
 from django.urls import reverse
 from django.utils import timezone
+import pytest
 
 from news.models import Comment, News
 
@@ -41,26 +41,20 @@ def news():
 
 @pytest.fixture
 def multiple_news():
-    all_news = (
+    News.objects.bulk_create(
         News(
             title=f'Новость {i}',
             text='Текст',
             date=(timezone.now() - timedelta(days=i))
         ) for i in range(settings.NEWS_COUNT_ON_HOME_PAGE + 1)
     )
-    News.objects.bulk_create(all_news)
 
 
 @pytest.fixture
-def id_news_for_args(news):
-    return (news.id,)
-
-
-@pytest.fixture
-def comment(author, news, form_comment):
+def comment(author, news):
     return Comment.objects.create(
         news=news,
-        text=form_comment['text'],
+        text='Комментарий',
         author=author,
     )
 
@@ -78,42 +72,28 @@ def multiple_comments(author, news):
 
 
 @pytest.fixture
-def id_comment_for_args(comment):
-    return (comment.id,)
+def home_url():
+    return reverse('news:home')
 
 
 @pytest.fixture
-def detail_url(id_news_for_args):
-    return reverse('news:detail', args=id_news_for_args)
+def detail_url(news):
+    return reverse('news:detail', args=(news.id,))
 
 
 @pytest.fixture
 def comment_url(detail_url):
-    return detail_url + '#comments'
+    return f'{detail_url}#comments'
 
 
 @pytest.fixture
-def edit_url(id_comment_for_args):
-    return reverse('news:edit', args=id_comment_for_args)
+def edit_url(comment):
+    return reverse('news:edit', args=(comment.id,))
 
 
 @pytest.fixture
-def delete_url(id_comment_for_args):
-    return reverse('news:delete', args=id_comment_for_args)
-
-
-@pytest.fixture
-def form_comment():
-    return {
-        'text': 'Текст Комментария'
-    }
-
-
-@pytest.fixture
-def form_edit_comment():
-    return {
-        'text': 'Другой Текст Комментария'
-    }
+def delete_url(comment):
+    return reverse('news:delete', args=(comment.id,))
 
 
 @pytest.fixture

@@ -1,47 +1,32 @@
 from django.contrib.auth import get_user_model
-from django.test import TestCase
-from django.urls import reverse, reverse_lazy
 
 from notes.forms import NoteForm
-from notes.models import Note
-
+from .conftest import ADD_URL, BaseTestCase, get_edit_url, LIST_URL
 
 User = get_user_model()
 
 
-class TestHomePage(TestCase):
+class TestHomePage(BaseTestCase):
 
-    @classmethod
-    def setUpTestData(cls):
-        cls.author = User.objects.create(username='Автор')
-        cls.reader = User.objects.create(username='Читатель')
-        cls.note = Note.objects.create(
-            title='Заголовок',
-            text='Содержательный текст',
-            slug='Note',
-            author=cls.author
+    def test_note_in_list_for_author(self):
+        notes = self.author_client.get(LIST_URL).context['object_list']
+        self.assertIn(
+            self.note, notes
+        )
+        note_from_context = notes.get(pk=self.note.pk)
+        self.assertEqual(self.note.title, note_from_context.title)
+        self.assertEqual(self.note.text, note_from_context.text)
+        self.assertEqual(self.note.slug, note_from_context.slug)
+        self.assertEqual(self.note.author, note_from_context.author)
+
+    def test_note_in_list_for_reader(self):
+        self.assertNotIn(
+            self.note, self.reader_client.get(LIST_URL).context['object_list']
         )
 
-    def test_note_in_list_for_different_users(self):
-        url = reverse_lazy('notes:list')
-        for current_user, expected_result in (
-            (self.author, True),
-            (self.reader, False)
-        ):
-            with self.subTest(current_user):
-                self.client.force_login(current_user)
-                self.assertEqual(
-                    self.note in self.client.get(url).context['object_list'],
-                    expected_result
-                )
-
     def test_pages_contains_form(self):
-        for name, args in (
-            ('notes:add', None),
-            ('notes:edit', (self.note.slug,))
-        ):
-            self.client.force_login(self.author)
+        for name in (ADD_URL, get_edit_url()):
             with self.subTest(name):
-                context = self.client.get(reverse(name, args=args)).context
+                context = self.author_client.get(name).context
                 self.assertIn('form', context)
                 self.assertIsInstance(context['form'], NoteForm)
