@@ -99,3 +99,23 @@ def delete_url(comment):
 @pytest.fixture
 def home_url():
     return reverse('news:home')
+
+
+@pytest.fixture
+def login_url():
+    return reverse('users:login')
+
+
+@pytest.fixture
+def signup_url():
+    return reverse('users:signup')
+
+
+@pytest.fixture
+def redirect_edit_url(login_url, edit_url):
+    return f'{login_url}?next={edit_url}'
+
+
+@pytest.fixture
+def redirect_delete_url(login_url, delete_url):
+    return f'{login_url}?next={delete_url}'

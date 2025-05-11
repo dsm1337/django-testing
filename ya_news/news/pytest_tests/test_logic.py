@@ -11,17 +11,6 @@ pytestmark = pytest.mark.django_db
 
 
 FORM = {'text': 'Текст комментария'}
-EDIT_FORM = {'text': 'Другой Текст комментария'}
-
-
-def check_comment_state(expected_comment, text=None):
-    curr_comment = Comment.objects.get()
-    assert (
-        curr_comment.text
-        == text if text is not None else expected_comment.text
-    )
-    assert curr_comment.author == expected_comment.author
-    assert curr_comment.news == expected_comment.news
 
 
 def test_anonymous_user_cant_create_comment(
@@ -50,10 +39,11 @@ def test_user_can_create_comment(
     BAD_WORDS
 )
 def test_user_cant_use_bad_words(author_client, detail_url, bad_word):
-    FORM['text'] = f'Текст {bad_word} еще текст'
+    form_with_bad_word = FORM.copy()
+    form_with_bad_word['text'] = f'Текст {bad_word} еще текст'
     assertFormError(
         author_client.post(
-            detail_url, data=FORM
+            detail_url, data=form_with_bad_word
         ).context['form'],
         'text',
         WARNING
@@ -78,23 +68,34 @@ def test_user_cant_delete_comment_of_another_user(
         == HTTPStatus.NOT_FOUND
     )
     assert Comment.objects.count() == 1
-    check_comment_state(comment)
+    curr_comment = Comment.objects.get(pk=comment.id)
+    assert curr_comment.text == comment.text
+    assert curr_comment.author == comment.author
+    assert curr_comment.news == comment.news
 
 
 def test_author_can_edit_comment(
     author_client, edit_url, comment_url, comment
 ):
+    form_edit = FORM.copy()
+    form_edit['text'] = 'Абсолютно другой текст'
     assertRedirects(
-        author_client.post(edit_url, data=EDIT_FORM), comment_url
+        author_client.post(edit_url, data=form_edit), comment_url
     )
-    check_comment_state(comment, EDIT_FORM['text'])
+    curr_comment = Comment.objects.get(pk=comment.id)
+    assert curr_comment.text == form_edit['text']
+    assert curr_comment.author == comment.author
+    assert curr_comment.news == comment.news
 
 
 def test_user_cant_edit_comment_of_another_user(
     not_author_client, edit_url, comment
 ):
-    response = not_author_client.post(edit_url, data=EDIT_FORM)
+    form_edit = FORM.copy()
+    form_edit['text'] = 'Абсолютно другой текст'
+    response = not_author_client.post(edit_url, data=form_edit)
     assert response.status_code == HTTPStatus.NOT_FOUND
-    curr_comment = Comment.objects.get()
-    assert curr_comment.text != EDIT_FORM['text']
-    check_comment_state(comment)
+    curr_comment = Comment.objects.get(pk=comment.id)
+    assert curr_comment.text == comment.text
+    assert curr_comment.author == comment.author
+    assert curr_comment.news == comment.news

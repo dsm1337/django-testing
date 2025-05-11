@@ -35,7 +35,6 @@ def test_presence_of_form_for_author(
     author_client, detail_url, multiple_comments
 ):
     response = author_client.get(detail_url)
-    assert 'form' in response.context
     assert isinstance(response.context.get('form'), CommentForm)
 
 
