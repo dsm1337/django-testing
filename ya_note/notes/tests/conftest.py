@@ -42,12 +42,8 @@ class BaseTestCase(TestCase):
             slug=DEFAULT_SLUG,
             author=cls.author
         )
-        cls.add_url = ADD_URL
-        cls.edit_url = EDIT_URL
-        cls.delete_url = DELETE_URL
         cls.form_data = {
             'title': 'Другой заголовок',
             'text': 'Другой текст',
             'slug': 'Another_slug'
         }
-        cls.url_to_success = SUCCESS_URL

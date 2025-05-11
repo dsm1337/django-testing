@@ -68,34 +68,30 @@ def test_user_cant_delete_comment_of_another_user(
         == HTTPStatus.NOT_FOUND
     )
     assert Comment.objects.count() == 1
-    curr_comment = Comment.objects.get(pk=comment.id)
-    assert curr_comment.text == comment.text
-    assert curr_comment.author == comment.author
-    assert curr_comment.news == comment.news
+    current_comment = Comment.objects.get(pk=comment.id)
+    assert current_comment.text == comment.text
+    assert current_comment.author == comment.author
+    assert current_comment.news == comment.news
 
 
 def test_author_can_edit_comment(
     author_client, edit_url, comment_url, comment
 ):
-    form_edit = FORM.copy()
-    form_edit['text'] = 'Абсолютно другой текст'
     assertRedirects(
-        author_client.post(edit_url, data=form_edit), comment_url
+        author_client.post(edit_url, data=FORM), comment_url
     )
-    curr_comment = Comment.objects.get(pk=comment.id)
-    assert curr_comment.text == form_edit['text']
-    assert curr_comment.author == comment.author
-    assert curr_comment.news == comment.news
+    current_comment = Comment.objects.get(pk=comment.id)
+    assert current_comment.text == FORM['text']
+    assert current_comment.author == comment.author
+    assert current_comment.news == comment.news
 
 
 def test_user_cant_edit_comment_of_another_user(
     not_author_client, edit_url, comment
 ):
-    form_edit = FORM.copy()
-    form_edit['text'] = 'Абсолютно другой текст'
-    response = not_author_client.post(edit_url, data=form_edit)
+    response = not_author_client.post(edit_url, data=FORM)
     assert response.status_code == HTTPStatus.NOT_FOUND
-    curr_comment = Comment.objects.get(pk=comment.id)
-    assert curr_comment.text == comment.text
-    assert curr_comment.author == comment.author
-    assert curr_comment.news == comment.news
+    current_comment = Comment.objects.get(pk=comment.id)
+    assert current_comment.text == comment.text
+    assert current_comment.author == comment.author
+    assert current_comment.news == comment.news
